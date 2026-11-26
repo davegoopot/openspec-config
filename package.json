@@ -12,7 +12,7 @@
     "config/"
   ],
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "sync": "node bin/cli.mjs sync",
     "check": "node bin/cli.mjs check"
   },
