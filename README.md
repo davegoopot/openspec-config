@@ -97,7 +97,7 @@ Or the lazy way: bump the dependency (`npm update openspec-config`, or edit `pac
 ## Changing the shared base
 
 1. Open a PR against [`config/base.yaml`](config/base.yaml) in this repo. Comments there are maintainer documentation only — they don't propagate to generated files, so put real content in actual values.
-2. Merge, then version and publish:
+2. Merge, then version and publish (first time? See [Publishing](#publishing-one-time-npm-setup) below):
 
 ```bash
 npm version minor        # or major/patch — see policy below
@@ -109,6 +109,23 @@ npm publish
 **Semver policy:** changes that add rules are `minor`; changes that alter or remove behavior (editing existing rules, changing `context`, removing keys) are `major`. The diff each consumer sees after `sync` is exactly what the agent's behavior change will be.
 
 Keep the base short: everything in it lands in every agent prompt on every run ([OpenSpec's advice](https://openspec.dev/docs/project-config)).
+
+## Publishing (one-time npm setup)
+
+Consumer repos never need an npm account — public packages install anonymously. An account is only needed by whoever publishes this package:
+
+1. **Create a free npm account**: <https://www.npmjs.com/signup> (any username — it doesn't need to match your GitHub account).
+2. **Enable 2FA** on the account (npmjs.com → your avatar → Account Settings → Security). npm asks for a one-time code when you publish.
+3. **Log in on this machine**:
+
+   ```bash
+   npm login        # opens a browser to finish sign-in
+   npm whoami       # confirm: prints your npm username
+   ```
+
+   npm stores a login token in `~/.npmrc` — no password is kept on disk. Use `npm logout` when finished on a shared machine.
+
+The first `npm publish` also **claims the name**: `openspec-config` is currently unregistered on npm, and publishing it attaches it to your account permanently (npm only allows unpublishing within 72 hours of a first release). If the name is ever taken, switch to a scoped one — e.g. `@<username>/openspec-config` in `package.json` — and consumers install that instead.
 
 ## Development
 
