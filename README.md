@@ -119,6 +119,8 @@ npm test
 
 `config/base.yaml` is the shared source of truth; `lib/core.mjs` holds the merge, emit, diff, and hook logic; `bin/cli.mjs` is the thin CLI entry. Tests run locally; this repo uses no CI.
 
+All changes — maintainer included — go through a branch and pull request. `main` is protected: direct pushes are rejected and PRs (no approvals required) are the only way in.
+
 ## License
 
 [MIT](LICENSE)
