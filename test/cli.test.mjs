@@ -1,10 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { diffLines, emitYaml, mergeConfigs, PKG_ROOT } from '../lib/core.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -175,4 +184,88 @@ test('errors: invalid YAML reports the file name', () => {
   assert.ok(!existsSync(join(dir, 'openspec', 'config.yaml')));
   rmSync(dirname(badBase), { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
+});
+
+const HOOK_MARKER = '# >>> openspec-config >>>';
+
+function gitproj() {
+  const dir = mkproj();
+  execFileSync('git', ['init', '-q', dir]);
+  return dir;
+}
+
+function runHook(dir) {
+  return spawnSync('sh', [join(dir, '.git', 'hooks', 'pre-commit')], {
+    encoding: 'utf8',
+    cwd: dir,
+  });
+}
+
+// Simulates `npm install openspec-config` in a scratch repo by wiring the
+// package and its bin into the repo's node_modules.
+function fakeInstall(dir) {
+  mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+  symlinkSync(PKG_ROOT, join(dir, 'node_modules', 'openspec-config'), 'dir');
+  symlinkSync(join(PKG_ROOT, 'bin', 'cli.mjs'), join(dir, 'node_modules', '.bin', 'openspec-config'), 'file');
+}
+
+test('hook: installs idempotent, executable pre-commit block', { skip: process.platform === 'win32' }, () => {
+  const dir = gitproj();
+  const r = run(['hook', '--dir', dir]);
+  assert.equal(r.status, 0, r.stderr);
+  const hookFile = join(dir, '.git', 'hooks', 'pre-commit');
+  const content = readFileSync(hookFile, 'utf8');
+  assert.ok(content.startsWith('#!/bin/sh'));
+  assert.ok(content.includes(HOOK_MARKER));
+  assert.ok(statSync(hookFile).mode & 0o111, 'hook is executable');
+  // idempotent: installing again leaves exactly one block
+  const r2 = run(['hook', '--dir', dir]);
+  assert.equal(r2.status, 0, r2.stderr);
+  const again = readFileSync(hookFile, 'utf8');
+  assert.equal(again.split(HOOK_MARKER).length - 1, 1);
+  assert.equal(again, content);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('hook: preserves existing hook content; --remove strips only our block', { skip: process.platform === 'win32' }, () => {
+  const dir = gitproj();
+  const hookFile = join(dir, '.git', 'hooks', 'pre-commit');
+  writeFileSync(hookFile, '#!/bin/sh\necho "custom hook"\n');
+  const r = run(['hook', '--dir', dir]);
+  assert.equal(r.status, 0, r.stderr);
+  const content = readFileSync(hookFile, 'utf8');
+  assert.ok(content.includes('custom hook'));
+  assert.ok(content.includes(HOOK_MARKER));
+  const r2 = run(['hook', '--dir', dir, '--remove']);
+  assert.equal(r2.status, 0, r2.stderr);
+  const removed = readFileSync(hookFile, 'utf8');
+  assert.ok(!removed.includes(HOOK_MARKER));
+  assert.ok(removed.includes('custom hook'));
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('hook: passes when in sync, blocks out-of-sync and uninstalled repos', { skip: process.platform === 'win32' }, () => {
+  // in-sync repo with the package installed: hook exits 0
+  const dir = gitproj();
+  fakeInstall(dir);
+  assert.equal(run(['sync', '--dir', dir]).status, 0);
+  assert.equal(run(['hook', '--dir', dir]).status, 0);
+  const ok = runHook(dir);
+  assert.equal(ok.status, 0, ok.stderr ?? ok.stdout);
+
+  // tampered config: hook exits 1 with guidance
+  writeFileSync(join(dir, 'openspec', 'config.yaml'), readFileSync(join(dir, 'openspec', 'config.yaml'), 'utf8') + '# manual\n');
+  const bad = runHook(dir);
+  assert.notEqual(bad.status, 0);
+  assert.match(bad.stdout, /Run: npx openspec-config sync/);
+
+  // package not installed (e.g. fresh clone): hook still blocks with a hint
+  const bare = gitproj();
+  assert.equal(run(['hook', '--dir', bare]).status, 0);
+  const noInstall = runHook(bare);
+  assert.notEqual(noInstall.status, 0);
+  assert.match(noInstall.stdout, /not installed/);
+
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(bare, { recursive: true, force: true });
 });
