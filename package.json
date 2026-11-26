@@ -1,0 +1,42 @@
+{
+  "name": "openspec-config",
+  "version": "1.0.0",
+  "description": "Share one OpenSpec config.yaml across repos via an npm-installable sync CLI",
+  "type": "module",
+  "bin": {
+    "openspec-config": "bin/cli.mjs"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "config/"
+  ],
+  "scripts": {
+    "test": "node --test test/",
+    "sync": "node bin/cli.mjs sync",
+    "check": "node bin/cli.mjs check"
+  },
+  "keywords": [
+    "openspec",
+    "spec-driven-development",
+    "config",
+    "sync",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davegoopot/openspec-config.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davegoopot/openspec-config/issues"
+  },
+  "homepage": "https://github.com/davegoopot/openspec-config#readme",
+  "author": "Dave Potts",
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

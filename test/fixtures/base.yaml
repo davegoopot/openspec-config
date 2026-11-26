@@ -1,0 +1,18 @@
+schema: spec-driven
+
+context: |
+  Write all artifacts in English.
+
+rules:
+  proposal:
+    - Keep proposals under 500 words
+  tasks:
+    - End every task with a commit
+
+operations:
+  apply:
+    guidance:
+      - Run focused tests before the full suite
+  archive:
+    guidance:
+      - Keep the completion summary concise

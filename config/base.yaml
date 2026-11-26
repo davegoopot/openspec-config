@@ -1,0 +1,45 @@
+# Shared OpenSpec configuration base.
+#
+# Consumer repos regenerate their openspec/config.yaml from this file:
+#
+#     npx openspec-config sync
+#
+# Change it via pull requests to this repo, then bump the version and publish.
+# Comments here are maintainer documentation only: generated files contain a
+# generated-header comment and none of the comments below.
+
+schema: spec-driven
+
+# ---------------------------------------------------------------------------
+# context — instructions the agent receives for every artifact and operation.
+# Keep it short: everything here lands in the agent's context on every run.
+#
+# context: |
+#   Designs and tasks must cover Windows, macOS, and Linux
+#   Write all artifacts in English
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# rules — extra instructions for one artifact, keyed by artifact id.
+# Lines are added to that artifact's built-in guidance; other artifacts are
+# untouched.
+#
+# rules:
+#   proposal:
+#     - Keep proposals under 500 words
+#     - Always state what is out of scope
+#   tasks:
+#     - Break tasks into chunks of max 2 hours
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# operations — guidance for how apply and archive are carried out.
+#
+# operations:
+#   apply:
+#     guidance:
+#       - Run focused tests before the full suite
+#   archive:
+#     guidance:
+#       - Keep the completion summary concise
+# ---------------------------------------------------------------------------
